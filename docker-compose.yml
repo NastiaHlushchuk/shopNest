@@ -1,0 +1,35 @@
+version: '2'
+services:
+  front:
+    build: ../commerce-storefront
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - server
+  server:
+    build: .
+    container_name: backend
+    ports:
+      - "8081:8081"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: always
+  db:
+    container_name: database
+    image: postgres:alpine3.14
+    environment:
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_DATABASE}
+    env_file:
+      - .env
+    volumes:
+     - ./db-init.sql:/docker-entrypoint-initdb.d/db-init.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "${DB_USERNAME}", "-d", "${DB_DATABASE}"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+  
